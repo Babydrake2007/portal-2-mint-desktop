@@ -1,3 +1,10 @@
+# About this fork:
+This is an altered version of Christopher Hayes' Portal 2 credits recreation, meant to serve as a dynamic wallpaper, primarily for Linux Mint, but it should have some basic funtionality on other distros and operating systems as well.
+
+The wallpaper features a digital clock, date and year, stats for CPU, RAM and DISK usage, as well as a container for you to put things like your computers name in (or anything else). It also has a glitch effect for the words "the cake is a lie".
+
+To customize things to your liking, you will have to manually edit the HTML, CSS or Javascript files.
+
 # Portal 2 Credits
 
 Web-based Portal 2 ending credits recreated with HTML, CSS, and Javascript.
