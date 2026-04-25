@@ -20,7 +20,7 @@ window.onload = function( e ) {
   state.scanimation.canvas.width = window.innerWidth;
   state.scanimation.canvas.height = window.innerHeight*2;
   state.scanimation.ctx = state.scanimation.canvas.getContext("2d");
-  paintScreen();
+  // paintScreen();
 
   lyrics = document.getElementById( "lyrics" );
   credits = document.getElementById( "credits" );
@@ -29,6 +29,7 @@ window.onload = function( e ) {
   var audio = document.getElementById( "music" );
   audio.addEventListener( 'canplaythrough', () => checkLoad(audio), false );
   checkLoad(audio);
+    initGlitch();
 }
 
 function checkLoad(audio) {
@@ -41,6 +42,55 @@ function checkLoad(audio) {
     setTimeout(() => checkLoad(audio), 100);
   }
 }
+
+// Update time and date display
+function updateTimeDisplay() {
+  const now = new Date();
+  
+  // Format time as HH:mm (24-hour format)
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const timeStr = `${hours}:${minutes}`;
+  
+  // Format date as dd:mm
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const dateStr = `${day}/${month}`;
+  
+  // Format year
+  const year = now.getFullYear();
+  const yearStr = `${year}`;
+  
+  // Update the display
+  const timeElement = document.getElementById('time');
+  const dateElement = document.getElementById('date');
+  const yearElement = document.getElementById('year');
+  if (timeElement) timeElement.innerText = timeStr;
+  if (dateElement) dateElement.innerText = dateStr;
+  if (yearElement) yearElement.innerText = yearStr;
+}
+
+// Start updating time on page load
+window.addEventListener('load', () => {
+  updateTimeDisplay();
+  setInterval(updateTimeDisplay, 1000);
+});
+
+// Mintpaper system stats update function
+window.updateStats = (stats) => {
+    const statsDisplay = document.getElementById('stats-display');
+    if (statsDisplay) {
+        const cpuPercent = Math.round(stats.cpu);
+        const ramPercent = Math.round(stats.ram);
+        const diskPercent = Math.round(stats.disk);
+        
+        statsDisplay.innerHTML = `
+            <div>CPU: ${cpuPercent}%</div>
+            <div>RAM: ${ramPercent}%</div>
+            <div>DISK: ${diskPercent}%</div>
+        `;
+    }
+};
 
 function playClick() {
   if (state.ready) {
@@ -73,13 +123,114 @@ function paintScreen() {
 function requestPlay() {
   const audioElem = document.querySelector('#music');
   const startAnimation = function() {
-    initCursor();
-    initLyrics();
-    initCredits();
+    // initCursor();
+    // initLyrics();
+    // initCredits();
   };
   audioElem.onplay = startAnimation;
   // Request audio to start playing
-  audioElem.play();
+  // audioElem.play();
+}
+
+/* GLITCH EFFECT: randomly flash "the cake is a lie" at safe random positions */
+function initGlitch(opts) {
+    const minInterval = (opts && opts.minInterval) || 6000;
+    const maxInterval = (opts && opts.maxInterval) || 40000;
+    const minDuration = (opts && opts.minDuration) || 120;
+    const maxDuration = (opts && opts.maxDuration) || 1200;
+    const avoidPadding = (opts && opts.avoidPadding) || 40; // px around elements to avoid
+    const edgePadding = (opts && opts.edgePadding) || 80; // px from edges
+
+    const el = document.getElementById('glitch');
+    if (!el) return;
+
+    // Ensure the element can be positioned by top/left (remove transform influence)
+    el.style.position = 'absolute';
+    el.style.transform = 'none';
+
+    let running = true;
+
+    function expandRect(r, pad) {
+        return { left: r.left - pad, top: r.top - pad, right: r.right + pad, bottom: r.bottom + pad };
+    }
+
+    function intersects(a, b) {
+        return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+    }
+
+    function getAvoidRects() {
+        const selectors = ['.pc-name-box', '.bars', '.nums', '.logo', '.stats', '.credits-wrap', '.border-left', '.border-right-top', '.border-right-bottom', '.content'];
+        const rects = [];
+        selectors.forEach(sel => {
+            document.querySelectorAll(sel).forEach(elm => {
+                const r = elm.getBoundingClientRect();
+                rects.push(expandRect(r, avoidPadding));
+            });
+        });
+        return rects;
+    }
+
+    function findSafePosition(elW, elH, avoidRects) {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const maxAttempts = 80;
+        for (let i = 0; i < maxAttempts; i++) {
+            const left = Math.floor(Math.random() * (vw - edgePadding * 2 - elW) + edgePadding);
+            const top = Math.floor(Math.random() * (vh - edgePadding * 2 - elH) + edgePadding);
+            const cand = { left: left, top: top, right: left + elW, bottom: top + elH };
+            let ok = true;
+            for (let j = 0; j < avoidRects.length; j++) {
+                if (intersects(cand, avoidRects[j])) { ok = false; break; }
+            }
+            if (ok) return { left, top };
+        }
+        // fallback to center
+        return { left: Math.floor((window.innerWidth - elW) / 2), top: Math.floor((window.innerHeight - elH) / 2) };
+    }
+
+    function setRandomPosition() {
+        const avoidRects = getAvoidRects();
+        const elW = el.offsetWidth || Math.min(300, Math.floor(window.innerWidth * 0.5));
+        const elH = el.offsetHeight || Math.min(80, Math.floor(window.innerHeight * 0.2));
+        const pos = findSafePosition(elW, elH, avoidRects);
+        el.style.left = pos.left + 'px';
+        el.style.top = pos.top + 'px';
+    }
+
+    function scheduleNext() {
+        const delay = Math.random() * (maxInterval - minInterval) + minInterval;
+        setTimeout(() => {
+            if (!running) return;
+            const duration = Math.random() * (maxDuration - minDuration) + minDuration;
+            // choose a new safe position for this flash
+            setRandomPosition();
+            el.classList.add('visible');
+
+            if (Math.random() < 0.3) {
+                // quick double-flicker effect
+                setTimeout(() => el.classList.remove('visible'), duration / 2);
+                setTimeout(() => { setRandomPosition(); el.classList.add('visible'); }, duration / 2 + 40);
+                setTimeout(() => el.classList.remove('visible'), duration + 40);
+            } else {
+                setTimeout(() => el.classList.remove('visible'), duration);
+            }
+
+            // schedule the next flash
+            scheduleNext();
+        }, delay);
+    }
+
+    // initial position and start schedule
+    setRandomPosition();
+    scheduleNext();
+
+    // reposition on resize so future flashes avoid new layout
+    const onResize = () => { setRandomPosition(); };
+    window.addEventListener('resize', onResize);
+
+    return {
+        stop: function() { running = false; window.removeEventListener('resize', onResize); }
+    };
 }
 
 /* LYRICS */
