@@ -4,6 +4,7 @@ This is an altered version of Christopher Hayes' Portal 2 credits recreation, me
 The wallpaper features a digital clock, date and year, stats for CPU, RAM and DISK usage, as well as a container for you to put things like your computers name in (or anything else). It also has a glitch effect for the words "the cake is a lie".
 
 To customize things to your liking, you will have to manually edit the HTML, CSS or Javascript files.
+![Screenshot of wallpaper](public/img/Screenshot from 2026-04-25 12-44-01.png)  
 
 # Portal 2 Credits
 
